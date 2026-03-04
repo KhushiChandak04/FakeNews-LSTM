@@ -1,0 +1,15 @@
+{
+  "test_loss": 0.0104,
+  "test_accuracy": 99.89,
+  "fake_precision": 99.79,
+  "fake_recall": 100.0,
+  "fake_f1": 99.89,
+  "real_precision": 100.0,
+  "real_recall": 99.77,
+  "real_f1": 99.88,
+  "macro_f1": 99.89,
+  "total_samples": 44898,
+  "train_samples": 35918,
+  "test_samples": 8980,
+  "roc_auc": 99.99
+}
