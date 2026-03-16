@@ -101,6 +101,22 @@ streamlit run app/streamlit_app.py
 ```
 → Opens at `http://localhost:8501`
 
+### Validation
+
+Syntax compile passed successfully.
+
+### One simple command to run during presentation
+
+```bash
+python -m streamlit run app/streamlit_app.py
+```
+
+If your venv is not active at presentation time, use this one-liner instead:
+
+```bash
+D:/GitHub/FakeNews-LSTM/venv/Scripts/python.exe -m streamlit run app/streamlit_app.py
+```
+
 ---
 
 ## 📊 Results

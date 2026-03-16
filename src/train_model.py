@@ -24,9 +24,13 @@ if gpus:
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     print(f"✔ GPU detected: {[g.name for g in gpus]}")
-    # Mixed precision for Tensor Cores (RTX 3050+)
-    tf.keras.mixed_precision.set_global_policy("mixed_float16")
-    print("✔ Mixed-precision (float16) enabled — faster on RTX 3050")
+    # Keep float32 by default for stable cross-platform inference (WSL train, Windows demo).
+    if os.getenv("ENABLE_MIXED_PRECISION", "0") == "1":
+        tf.keras.mixed_precision.set_global_policy("mixed_float16")
+        print("✔ Mixed-precision (float16) enabled")
+    else:
+        tf.keras.mixed_precision.set_global_policy("float32")
+        print("✔ Using float32 for portable inference")
 else:
     print("⚠ No GPU found — training on CPU (still fast for this dataset)")
 
@@ -85,7 +89,7 @@ def build_model(vocab_size: int = MAX_WORDS,
         Dropout(dropout),
         Dense(64, activation="relu", kernel_regularizer=regularizers.l2(1e-4)),
         Dropout(dropout),
-        Dense(1, activation="sigmoid")
+        Dense(1, activation="sigmoid", dtype="float32")
     ])
 
     model.compile(

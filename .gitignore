@@ -21,7 +21,6 @@ ENV/
 *.ipynb_checkpoints
 
 # ── Model artifacts ──────────────────────────────────────────────────────────
-models/*.h5
 models/*.keras
 models/*.pkl
 !models/scores.json

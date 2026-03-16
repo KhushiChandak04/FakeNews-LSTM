@@ -18,17 +18,15 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # ─── Paths (relative to project root) ────────────────────────────────────────
 MODEL_PATH = os.path.join("models", "fake_news_lstm.keras")
-LEGACY_MODEL_PATH = os.path.join("models", "fake_news_lstm.h5")
 TOKENIZER_PATH = os.path.join("models", "tokenizer.pkl")
 MAX_SEQUENCE_LEN = 300
 
 
 def _load_artifacts():
     """Load the trained model and tokenizer from disk."""
-    model_path = MODEL_PATH if os.path.exists(MODEL_PATH) else LEGACY_MODEL_PATH
-    if not os.path.exists(model_path):
+    if not os.path.exists(MODEL_PATH):
         raise FileNotFoundError(
-            f"Model not found at '{MODEL_PATH}' or '{LEGACY_MODEL_PATH}'. Train the model first with:\n"
+            f"Model not found at '{MODEL_PATH}'. Train the model first with:\n"
             "  python src/train_model.py"
         )
     if not os.path.exists(TOKENIZER_PATH):
@@ -36,7 +34,7 @@ def _load_artifacts():
             f"Tokenizer not found at '{TOKENIZER_PATH}'. Train the model first."
         )
 
-    model = load_model(model_path)
+    model = load_model(MODEL_PATH)
     with open(TOKENIZER_PATH, "rb") as f:
         tokenizer = pickle.load(f)
 
@@ -68,9 +66,9 @@ def predict_news(text: str) -> tuple:
     Returns
     -------
     label : str
-        "Fake" or "Real"
+        "Fake", "Real", or "Uncertain"
     confidence : float
-        Model confidence (0-1). Values > 0.5 → Real, else Fake.
+        Confidence score in range [0, 1].
     """
     try:
         from preprocess import clean_text  # local import to avoid circular deps
@@ -81,12 +79,29 @@ def predict_news(text: str) -> tuple:
 
     cleaned = clean_text(text)
     seq = tokenizer.texts_to_sequences([cleaned])
+    tokens = seq[0]
     padded = pad_sequences(seq, maxlen=MAX_SEQUENCE_LEN, padding="post", truncating="post")
 
     prob = model.predict(padded, verbose=0)[0][0]
 
-    label = "Real" if prob >= 0.5 else "Fake"
-    confidence = float(prob) if prob >= 0.5 else float(1 - prob)
+    oov_id = tokenizer.word_index.get("<OOV>")
+    token_count = len(tokens)
+    oov_ratio = 0.0
+    if token_count > 0 and oov_id is not None:
+        oov_ratio = sum(1 for t in tokens if t == oov_id) / token_count
+
+    if token_count < 8 or oov_ratio > 0.45:
+        label = "Uncertain"
+        confidence = float(max(0.5, 1.0 - oov_ratio))
+    elif prob >= 0.60:
+        label = "Real"
+        confidence = float(prob)
+    elif prob <= 0.40:
+        label = "Fake"
+        confidence = float(1 - prob)
+    else:
+        label = "Uncertain"
+        confidence = float(1 - abs(prob - 0.5) * 2)
 
     return label, confidence
 
