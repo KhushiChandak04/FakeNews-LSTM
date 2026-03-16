@@ -26,7 +26,7 @@ News Article → Text Preprocessing → Tokenization → BiLSTM Model → Fake /
 ```
 
 - 🧠 Trained on **44,898** labelled news articles  
-- 🎯 Achieves **99.89% accuracy** on test data  
+- 🎯 Trains with strict **train/validation/test split** to reduce metric inflation  
 - 🌐 Live predictions via **Streamlit** web app  
 - ⚡ GPU-accelerated training (RTX 3050 → ~2-5 min)  
 
@@ -54,7 +54,7 @@ News Article → Text Preprocessing → Tokenization → BiLSTM Model → Fake /
 ```
 FakeNews-LSTM/
 ├── data/raw/              # Fake.csv & True.csv
-├── models/                # Trained model & tokenizer
+├── models/                # Trained .keras model, tokenizer, diagnostics
 ├── notebooks/             # Training walkthrough
 │   └── training.ipynb
 ├── src/
@@ -105,6 +105,14 @@ streamlit run app/streamlit_app.py
 
 ## 📊 Results
 
+Training now reports metrics from an untouched test split and writes diagnostics to:
+
+- `models/training_curves.png`
+- `models/confusion_matrix.png`
+- `models/roc_curve.png`
+- `models/prediction_distribution.png`
+- `models/scores.json`
+
 <div align="center">
 
 | Metric | Fake | Real | Overall |
@@ -115,7 +123,7 @@ streamlit run app/streamlit_app.py
 | **Accuracy** | — | — | **99.89%** |
 | **AUC-ROC** | — | — | **99.99%** |
 
-> Trained on **44,898** articles · Tested on **8,980** samples · Loss: **0.0104**
+> Exact metrics depend on retraining run and random seed.
 
 </div>
 

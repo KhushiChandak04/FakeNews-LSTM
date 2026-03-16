@@ -17,16 +17,18 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # ─── Paths (relative to project root) ────────────────────────────────────────
-MODEL_PATH = os.path.join("models", "fake_news_lstm.h5")
+MODEL_PATH = os.path.join("models", "fake_news_lstm.keras")
+LEGACY_MODEL_PATH = os.path.join("models", "fake_news_lstm.h5")
 TOKENIZER_PATH = os.path.join("models", "tokenizer.pkl")
 MAX_SEQUENCE_LEN = 300
 
 
 def _load_artifacts():
     """Load the trained model and tokenizer from disk."""
-    if not os.path.exists(MODEL_PATH):
+    model_path = MODEL_PATH if os.path.exists(MODEL_PATH) else LEGACY_MODEL_PATH
+    if not os.path.exists(model_path):
         raise FileNotFoundError(
-            f"Model not found at '{MODEL_PATH}'. Train the model first with:\n"
+            f"Model not found at '{MODEL_PATH}' or '{LEGACY_MODEL_PATH}'. Train the model first with:\n"
             "  python src/train_model.py"
         )
     if not os.path.exists(TOKENIZER_PATH):
@@ -34,7 +36,7 @@ def _load_artifacts():
             f"Tokenizer not found at '{TOKENIZER_PATH}'. Train the model first."
         )
 
-    model = load_model(MODEL_PATH)
+    model = load_model(model_path)
     with open(TOKENIZER_PATH, "rb") as f:
         tokenizer = pickle.load(f)
 
@@ -70,7 +72,10 @@ def predict_news(text: str) -> tuple:
     confidence : float
         Model confidence (0-1). Values > 0.5 → Real, else Fake.
     """
-    from preprocess import clean_text  # local import to avoid circular deps
+    try:
+        from preprocess import clean_text  # local import to avoid circular deps
+    except ModuleNotFoundError:
+        from src.preprocess import clean_text
 
     model, tokenizer = _get_artifacts()
 

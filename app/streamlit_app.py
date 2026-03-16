@@ -16,7 +16,8 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
-MODEL_PATH     = os.path.join("models", "fake_news_lstm.h5")
+MODEL_PATH     = os.path.join("models", "fake_news_lstm.keras")
+LEGACY_MODEL_PATH = os.path.join("models", "fake_news_lstm.h5")
 TOKENIZER_PATH = os.path.join("models", "tokenizer.pkl")
 MAX_SEQUENCE_LEN = 300
 
@@ -128,7 +129,10 @@ def clean_text(text: str) -> str:
 # ─── Cached model loading ────────────────────────────────────────────────────
 @st.cache_resource
 def load_artifacts():
-    model = load_model(MODEL_PATH)
+    model_path = MODEL_PATH if os.path.exists(MODEL_PATH) else LEGACY_MODEL_PATH
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(model_path)
+    model = load_model(model_path)
     with open(TOKENIZER_PATH, "rb") as f:
         tokenizer = pickle.load(f)
     return model, tokenizer

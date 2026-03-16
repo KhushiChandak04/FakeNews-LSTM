@@ -56,6 +56,10 @@ def load_data(fake_path: str = "data/raw/Fake.csv",
     df["content"] = df["title"].fillna("") + " " + df["text"].fillna("")
     df["content"] = df["content"].apply(clean_text)
 
+    # Remove empty and duplicate samples to reduce memorization risk.
+    df = df[df["content"].str.len() > 0]
+    df = df.drop_duplicates(subset=["content"]).reset_index(drop=True)
+
     return df[["content", "label"]]
 
 
@@ -94,21 +98,53 @@ def tokenize_and_pad(texts,
 
 
 # ─── Prepare full pipeline ───────────────────────────────────────────────────
-def prepare_data(test_size: float = 0.2):
+def prepare_data(test_size: float = 0.15,
+                 val_size: float = 0.1,
+                 random_state: int = 42):
     """
     End-to-end: load → clean → tokenize → split.
 
     Returns
     -------
-    X_train, X_test, y_train, y_test, tokenizer
+    X_train, X_val, X_test, y_train, y_val, y_test, tokenizer
     """
     df = load_data()
 
-    X_pad, tokenizer = tokenize_and_pad(df["content"].values)
+    X = df["content"].values
     y = df["label"].values
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_pad, y, test_size=test_size, random_state=42
+    # Split before tokenizer fit to prevent data leakage.
+    X_train_full, X_test_text, y_train_full, y_test = train_test_split(
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y,
+    )
+
+    relative_val_size = val_size / (1.0 - test_size)
+    X_train_text, X_val_text, y_train, y_val = train_test_split(
+        X_train_full,
+        y_train_full,
+        test_size=relative_val_size,
+        random_state=random_state,
+        stratify=y_train_full,
+    )
+
+    X_train, tokenizer = tokenize_and_pad(
+        X_train_text,
+        tokenizer=None,
+        fit=True,
+    )
+    X_val, _ = tokenize_and_pad(
+        X_val_text,
+        tokenizer=tokenizer,
+        fit=False,
+    )
+    X_test, _ = tokenize_and_pad(
+        X_test_text,
+        tokenizer=tokenizer,
+        fit=False,
     )
 
     # Persist tokenizer for inference
@@ -116,14 +152,21 @@ def prepare_data(test_size: float = 0.2):
     with open(TOKENIZER_PATH, "wb") as f:
         pickle.dump(tokenizer, f)
 
-    print(f"✔ Data prepared  |  Train: {len(X_train)}  |  Test: {len(X_test)}")
+    print(
+        "✔ Data prepared"
+        f"  |  Train: {len(X_train)}"
+        f"  |  Val: {len(X_val)}"
+        f"  |  Test: {len(X_test)}"
+    )
     print(f"✔ Tokenizer saved to {TOKENIZER_PATH}")
 
-    return X_train, X_test, y_train, y_test, tokenizer
+    return X_train, X_val, X_test, y_train, y_val, y_test, tokenizer
 
 
 # ─── CLI quick-test ──────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    X_train, X_test, y_train, y_test, tok = prepare_data()
+    X_train, X_val, X_test, y_train, y_val, y_test, tok = prepare_data()
     print(f"X_train shape: {X_train.shape}")
+    print(f"X_val shape: {X_val.shape}")
+    print(f"X_test shape: {X_test.shape}")
     print(f"Vocabulary size: {min(MAX_WORDS, len(tok.word_index) + 1)}")

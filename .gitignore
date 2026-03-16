@@ -1,8 +1,49 @@
-venv/
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# ── Virtual environments ─────────────────────────────────────────────────────
+venv/
+.venv/
+.venv_wsl/
+env/
+ENV/
+
+# ── Jupyter ────────────────────────────────────────────────────────────────────
 .ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Model artifacts ──────────────────────────────────────────────────────────
 models/*.h5
+models/*.keras
 models/*.pkl
+!models/scores.json
+
+# ── Data ───────────────────────────────────────────────────────────────────────
+# Raw CSVs are large — user must download from Kaggle
 data/raw/*.csv
+
+# ── Environment & secrets ──────────────────────────────────────────────────────
 .env
+.env.*
+*.env
+
+# ── OS / editor noise ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Project helper scripts (local) ───────────────────────────────────────────
+wsl_*.sh
+
